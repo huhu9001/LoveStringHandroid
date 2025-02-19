@@ -31,22 +31,23 @@ class HomeFragment : androidx.fragment.app.Fragment() {
         val body = com.huhu9001.lovestringh.databinding.FragmentHomeBinding.inflate(inflater, container, false)
         val context = requireContext()
 
+        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val toastCopied =
+            android.widget.Toast.makeText(context, com.huhu9001.lovestringh.R.string.toast_output_copied, android.widget.Toast.LENGTH_SHORT)
+
         body.spinnerEncoding.adapter = EncodingAdaptor(context)
         body.spinnerEscapestyle.adapter = EscapestyleAdaptor(context, body.spinnerEncoding)
 
-        @Suppress("UNUSED_PARAMETER") fun textChangedChar(p0:android.text.Editable?) {
-            if (stopTextChangedOnce) return
-            body.checkboxChangebytes.isChecked = true
+        fun encodeText() {
             stopTextChangedOnce = true
             body.edittextByte.setText((body.spinnerEncoding.selectedItem as Encoder).encode(
                 body.edittextChar.text,
-                (body.spinnerEscapestyle.selectedItem as Encoder.EscapeStyle).escape))
+                (body.spinnerEscapestyle.selectedItem as Encoder.EscapeStyle).escape,
+                body.edittextDonotencode.text))
             stopTextChangedOnce = false
         }
 
-        @Suppress("UNUSED_PARAMETER") fun textChangedByte(p0:android.text.Editable?) {
-            if (stopTextChangedOnce) return
-            body.checkboxChangebytes.isChecked = false
+        fun decodeText() {
             stopTextChangedOnce = true
             body.edittextChar.setText((body.spinnerEncoding.selectedItem as Encoder).decode(body.edittextByte.text))
             stopTextChangedOnce = false
@@ -54,8 +55,18 @@ class HomeFragment : androidx.fragment.app.Fragment() {
 
         val handler = android.os.Handler(context.mainLooper)
         handler.post {
-            body.edittextChar.doAfterTextChanged(::textChangedChar)
-            body.edittextByte.doAfterTextChanged(::textChangedByte)
+            body.edittextChar.doAfterTextChanged {
+                if (!stopTextChangedOnce) {
+                    body.checkboxChangebytes.isChecked = true
+                    encodeText()
+                }
+            }
+            body.edittextByte.doAfterTextChanged {
+                if (!stopTextChangedOnce) {
+                    body.checkboxChangebytes.isChecked = false
+                    decodeText()
+                }
+            }
             body.spinnerEncoding.onItemSelectedListener = object:android.widget.AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p0:android.widget.AdapterView<*>?, p1:View?, p2:Int, p3:Long) {
                     val indexStyle = body.spinnerEscapestyle.selectedItemPosition
@@ -65,9 +76,7 @@ class HomeFragment : androidx.fragment.app.Fragment() {
                         handler.post { handler.post { stopEscapestyleChangedOnce = false } }
                         /* Double Handler.post() is needed to ensure this flag clearing is executed after onItemSelected() */
                     }
-                    if (body.checkboxChangebytes.isChecked)
-                        textChangedChar(body.edittextChar.text)
-                    else textChangedByte(body.edittextByte.text)
+                    if (body.checkboxChangebytes.isChecked) encodeText() else decodeText()
                     (body.spinnerEscapestyle.adapter as android.widget.BaseAdapter).notifyDataSetChanged()
                 }
                 override fun onNothingSelected(p0:android.widget.AdapterView<*>?) = p0?.setSelection(0) ?: Unit
@@ -75,9 +84,23 @@ class HomeFragment : androidx.fragment.app.Fragment() {
             body.spinnerEscapestyle.onItemSelectedListener = object:android.widget.AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p0:android.widget.AdapterView<*>?, p1:View?, p2:Int, p3:Long) {
                     if (stopEscapestyleChangedOnce) return
-                    textChangedChar(body.edittextChar.text)
+                    encodeText()
                 }
                 override fun onNothingSelected(p0:android.widget.AdapterView<*>?) = p0?.setSelection(0) ?: Unit
+            }
+            body.edittextDonotencode.doAfterTextChanged { encodeText() }
+            body.buttonCopyChar.setOnClickListener {
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText(context.getString(com.huhu9001.lovestringh.R.string.app_name), body.edittextChar.text))
+                toastCopied.show()
+            }
+            body.buttonCopyByte.setOnClickListener {
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText(context.getString(com.huhu9001.lovestringh.R.string.app_name), body.edittextByte.text))
+                toastCopied.show()
+            }
+            body.buttonClear.setOnClickListener {
+                (if (body.checkboxChangebytes.isChecked)
+                    body.edittextChar
+                else body.edittextByte).text.clear()
             }
         }
         return body.root

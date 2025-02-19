@@ -15,7 +15,7 @@ class RegexHandler {
     private var emptyMatch = false
 
     fun setText(text:String, start:Int, end:Int) {
-		if (this.text == text && this.end == end && this.start == start) return
+        if (this.text == text && this.end == end && this.start == start) return
         this.text = text
         this.end = if (end in 0 .. text.length) end else 0
         this.start = if (start in 0 .. this.end) start else 0

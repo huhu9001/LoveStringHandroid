@@ -14,7 +14,11 @@
     <string name="hint_edittext_regex">Regex</string>
     <string name="hint_edittext_replace">Replacement</string>
     <string name="text_checkbox_changebytes">Change bytes when switching encodings</string>
+    <string name="text_textview_donotencode">Do not encode [^</string>
+    <string name="text_textview_donotencodeend">]</string>
     <string name="text_button_copy">Copy</string>
+    <string name="text_button_copy_char">Copy chars</string>
+    <string name="text_button_copy_byte">Copy bytes</string>
     <string name="text_button_clear">Clear</string>
     <string name="text_button_findnext">Find next</string>
     <string name="text_button_replace">Replace</string>

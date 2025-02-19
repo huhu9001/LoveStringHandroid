@@ -34,10 +34,12 @@ class Encoder private constructor(val name:String, private val e: Charset?, val 
 
     override fun toString() = name
 
-    fun encode(str:CharSequence, escape:(Int)->String):String {
+    fun encode(str:CharSequence, escape:(Int)->String, strNE:CharSequence) = try {
+        Regex("[^${strNE}]+")
+    } catch (_:Exception) { Regex("^\b$") }.replace(str) {
         val strResult = StringBuilder()
         if (e != null) {
-            val bs = e.encode(java.nio.CharBuffer.wrap(str))
+            val bs = e.encode(java.nio.CharBuffer.wrap(it.value))
             while (true) {
                 val b = try { bs.get() } catch (_:java.nio.BufferUnderflowException) { break }
                 strResult.append(escape(b.toUByte().toInt()))
@@ -45,7 +47,7 @@ class Encoder private constructor(val name:String, private val e: Charset?, val 
         }
         else {
             var surrogate = '\u0000'
-            for (char in str) {
+            for (char in it.value) {
                 if (surrogate != '\u0000') {
                     if (char in '\uDC00'..< '\uE000') {
                         strResult.append(escape((surrogate.code - 0xD7C0 shl 10) or (char.code - 0xDC00)))
@@ -62,7 +64,7 @@ class Encoder private constructor(val name:String, private val e: Charset?, val 
             }
             if (surrogate != '\u0000') strResult.append(escape(surrogate.code))
         }
-        return strResult.toString()
+        strResult.toString()
     }
 
     fun decode(str:CharSequence):String {
